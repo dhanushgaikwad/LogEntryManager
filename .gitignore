@@ -1,0 +1,17 @@
+# Node modules
+LogManagerApp/node_modules/
+LogManagerService/node_modules/
+dist/
+build/
+
+# SQLite (if you switch to file-based later)
+*.sqlite
+*.db
+
+# Logs
+logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
