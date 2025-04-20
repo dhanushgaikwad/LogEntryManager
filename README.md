@@ -1,2 +1,2 @@
 # LogEntryManager
-Crud application for log entry
+Crud application for log entry manager

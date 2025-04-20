@@ -16,9 +16,11 @@ function App() {
   const handleCreateEntry = async (e) => {
     e.preventDefault();
     if (editId) {
-      await axios.put('${api_url}/${editId}', form);
+      console.log('Updating entry with ID at URL:', editId, api_url);
+      await axios.put(`${api_url}/${editId}`, form);
       setEditId(null);
     } else {
+      console.log('Creating new entry at URL:', api_url);
       await axios.post(api_url, form);
     }
     setForm({ name: '', description: '', date: '', location: '' });
@@ -31,7 +33,8 @@ function App() {
   };
 
   const handleDeleteEntry = async(id) => {
-    await axios.delete('${api_url}/${id}');
+    console.log('Deleting entry with ID at URL:', id, api_url);
+    await axios.delete(`${api_url}/${id}`);
     fetchLogs();
   };
 

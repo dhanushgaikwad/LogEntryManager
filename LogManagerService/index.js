@@ -8,8 +8,10 @@ app.use(express.json());
 
 const db = new sqlite.Database(':memory:');
 
+const pad = (n) => n.toString().padStart(2, '0');
+
 db.serialize(() => {
-  db.run("CREATE TABLE log_entries (id INTEGER PRIMARY KEY AUTOINCREMENT, name text, description TEXT, date DATETIME," +
+  db.run("CREATE TABLE log_entries (id INTEGER PRIMARY KEY AUTOINCREMENT, name text, description TEXT, date TEXT," +
      "location TEXT, active BOOLEAN DEFAULT 'TRUE', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
 });
 
@@ -17,10 +19,11 @@ console.log('Database created and table initialized with sample initial data.');
 
 for (let i = 0; i < 7; i++) {
   db.run("INSERT INTO log_entries (name, description, date, location) VALUES (?, ?, ?, ?)", 
-    [`Name ${i}`, `Description ${i}`, new Date() - i, `Location ${i}`]);
+    [`Name ${i}`, `Description ${i}`, new Date().getFullYear() + '-' + (pad(new Date().getMonth() + 1)) + '-' + (new Date().getDate() - i), `Location ${i}`]);
 }
 
 app.get('/v1/logs', (req, res) => {
+  // TODO: Implement pagination 
   console.log('Received request to fetch all log entries');
   const sql = "SELECT * FROM log_entries where active = 'TRUE' ORDER BY created_at DESC LIMIT 5";
   db.all(sql, [], (err, rows) => {
@@ -28,6 +31,7 @@ app.get('/v1/logs', (req, res) => {
       res.status(500).json({ error: err.message });
       return;
     }
+    console.log('Fetched log entries:', rows);
     res.json(rows);
   });
 });
@@ -44,6 +48,58 @@ app.post('/v1/logs', (req, res) => {
     res.json({ id: this.lastID });
   });
 });
+
+app.put('/v1/logs/:id', (req, res) => {
+  const { id } = req.params;
+  const { name, description, date, location } = req.body;
+  // Validate the ID before proceeding with the update
+  validateRequestId(id);
+  console.log('Received request to update log entry with ID:', id, 'Data:', req.body);
+  const sql = "UPDATE log_entries SET name = ?, description = ?, date = ?, location = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+  db.run(sql, [name, description, date, location, id], function (err) {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({ changes: this.changes });
+  });
+});
+
+app.delete('/v1/logs/:id', (req, res) => {
+  const { id } = req.params;
+  // Validate the ID before proceeding with the deletion
+  validateRequestId(id);
+  console.log('Received request to delete log entry with ID:', id);
+ 
+  // Proceed with the deletion
+  const sql = "UPDATE log_entries SET active = 'FALSE' WHERE id = ?";
+  db.run(sql, [id], function (err) {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({ changes: this.changes });
+  });
+});
+
+validateRequestId = (id) => {
+   // Check if the ID is valid
+   console.log('Validating ID:', id);
+   if (!id || isNaN(id)) {
+    return res.status(400).json({ error: 'Invalid ID' });
+  }
+  // Check if the ID exists in the database
+  const checkSql = "SELECT * FROM log_entries WHERE id = ?";
+  db.get(checkSql, [id], (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    if (!row) {
+      return res.status(404).json({ error: 'Log entry not found' });
+    }
+  });
+};
+
 
 
 const PORT = 1984;
