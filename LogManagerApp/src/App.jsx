@@ -7,10 +7,14 @@ function App() {
   const [log_entry, setLogEntry] = useState([]);
   const [form, setForm] = useState({ name: '', description: '', date: '', location: ''});
   const [editId, setEditId] = useState(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchLogs = async () => {
-    const response = await axios.get(api_url);
-    setLogEntry(response.data);
+  const fetchLogs = async (pg = 1) => {
+    const response = await axios.get(api_url + `?page=${pg}&limit=5`);
+    setLogEntry(response.data.logs);
+    setTotalPages(response.data.totalPages);
+    setPage(response.data.page);
   };
 
   const handleCreateEntry = async (e) => {
@@ -60,6 +64,18 @@ function App() {
           </li>
         ))}
       </ul>
+      <div>
+        Page:
+        {Array.from({ length: totalPages }, (_, i) => (
+          <button
+            key={i}
+            onClick={() => fetchLogs(i + 1)}
+            style={{ margin: '0 5px', fontWeight: page === i + 1 ? 'bold' : 'normal' }}
+          >
+            {i + 1}
+          </button>
+        ))}
+      </div>
     </div>
   );
   }

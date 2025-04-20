@@ -23,17 +23,32 @@ for (let i = 0; i < 7; i++) {
 }
 
 app.get('/v1/logs', (req, res) => {
-  // TODO: Implement pagination 
-  console.log('Received request to fetch all log entries');
-  const sql = "SELECT * FROM log_entries where active = 'TRUE' ORDER BY created_at DESC LIMIT 5";
-  db.all(sql, [], (err, rows) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 5; 
+  const offset = (page - 1) * limit;
+  console.log('Received request to fetch log entries with pagination:', { page, limit, offset });
+
+  const sql = "SELECT * FROM log_entries where active = 'TRUE' ORDER BY updated_at DESC LIMIT ? OFFSET ?";
+  db.all(sql, [limit, offset], (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
       return;
     }
+    db.get("SELECT COUNT(*) as total FROM log_entries where active = 'TRUE'", (err, countRow) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
     console.log('Fetched log entries:', rows);
-    res.json(rows);
+    res.json({
+      logs: rows,
+      total: countRow.total,
+      page: page,
+      totalPages: Math.ceil(countRow.total / limit)
+    }
+    );
   });
+});
 });
 
 app.post('/v1/logs', (req, res) => {
