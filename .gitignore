@@ -1,7 +1,7 @@
 # Node modules
 LogManagerApp/node_modules/
 LogManagerService/node_modules/
-dist/
+LogManagerService/dist/
 build/
 
 # SQLite (if you switch to file-based later)
