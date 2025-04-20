@@ -139,10 +139,11 @@ app.put('/v1/logs/:id', (req: Request, res: Response) => {
 });
 
 // Delete a log entry
-app.delete('/v1/logs/:id', (req: Request, res: Response) => {
+app.delete('/v1/logs/:id', async(req: Request, res: Response) => {
   const { id } = req.params;
 
-  if (!validateRequestId(id, res)) return;
+  const isValid = await validateRequestId(id, res);
+  if (!isValid) return;
 
   console.log('Received request to delete log entry with ID:', id);
   const sql = `UPDATE log_entries SET active = 'FALSE' WHERE id = ?`;
@@ -151,18 +152,33 @@ app.delete('/v1/logs/:id', (req: Request, res: Response) => {
       res.status(500).json({ error: err.message });
       return;
     }
-    res.json({ changes: this.changes });
+    res.json({ message: 'Entry deleted' });
   });
 });
 
 // Validate request ID
-const validateRequestId = (id: string, res: Response): boolean => {
+const validateRequestId = (id: string, res: Response): Promise<boolean> => {
   console.log('Validating ID:', id);
+  return new Promise((resolve) => {
   if (!id || isNaN(Number(id))) {
-    res.status(400).json({ error: 'Invalid ID' });
-    return false;
+    res.status(404).json({ error: 'Invalid ID' });
+    return resolve(false);
   }
-  return true;
+
+  db.get("SELECT id from log_entries where id = ?", [id], (err, row) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return resolve(false);
+    }
+    if (!row) {
+      res.status(404).json({ error: 'Log entry not found' });
+      return resolve(false);
+    }
+    
+    console.log('ID is valid:', id);
+    return resolve(true);
+  });
+});
 };
 
 export default app;

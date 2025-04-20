@@ -35,7 +35,7 @@ npm install      # Only once
 npm run dev
 ```
 
-This will start the React app (default port: `http://http://192.168.1.203:1992`).
+This will start the React app (default port: `http://http://192.168.1.203:1992`). // Set this to the IP of your machine
 
 ---
 
@@ -52,6 +52,13 @@ npm run dev
 This will start the Node.js server (default port: `http://http://192.168.1.203:1984`).
 
 ---
+
+### To run test 
+cd LogEntryManager/LogManagerService
+npm test
+
+cd LogEntryManager/LogManagerApp
+npm install      # Only once
 
 
 
