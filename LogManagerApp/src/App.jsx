@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
-const api_url = 'http://localhost:1984/v1/logs';
+const api_url = 'http://192.168.1.203:1984/v1/logs';
 
 function App() {
   const [log_entry, setLogEntry] = useState([]);
@@ -55,27 +55,44 @@ function App() {
         <input type="text" placeholder="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} required />
         <button type="submit">{editId ? 'Update' : 'Create'}</button>
       </form>
-      <ul>
-        {log_entry.map((entry) => (
-          <li key={entry.id}>
-            {entry.name} - {entry.description} - {entry.date} - {entry.location}
-            <button onClick={() => handleEditEntry(entry)}>Edit</button>
-            <button onClick={() => handleDeleteEntry(entry.id)}>Delete</button>
-          </li>
-        ))}
-      </ul>
-      <div>
-        Page:
-        {Array.from({ length: totalPages }, (_, i) => (
-          <button
-            key={i}
-            onClick={() => fetchLogs(i + 1)}
-            style={{ margin: '0 5px', fontWeight: page === i + 1 ? 'bold' : 'normal' }}
-          >
-            {i + 1}
-          </button>
-        ))}
-      </div>
+      <table border="1" cellPadding="8" cellSpacing="0" style={{ width: '100%', textAlign: 'left' }}>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Date</th>
+      <th>Location</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {log_entry.map((entry) => (
+      <tr key={entry.id}>
+        <td>{entry.name}</td>
+        <td>{entry.description}</td>
+        <td>{entry.date}</td>
+        <td>{entry.location}</td>
+        <td>
+          <button onClick={() => handleEditEntry(entry)}>Edit</button>
+          <button onClick={() => handleDeleteEntry(entry.id)} style={{ marginLeft: '5px' }}>Delete</button>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
+<div style={{ marginTop: '10px' }}>
+  Page:
+  {Array.from({ length: totalPages }, (_, i) => (
+    <button
+      key={i}
+      onClick={() => fetchLogs(i + 1)}
+      style={{ margin: '0 5px', fontWeight: page === i + 1 ? 'bold' : 'normal' }}
+    >
+      {i + 1}
+    </button>
+  ))}
+</div>
     </div>
   );
   }
