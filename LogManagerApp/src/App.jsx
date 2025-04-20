@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
+import CreatableSelect from 'react-select/creatable';
 import axios from 'axios';
 
-const api_url = 'http://192.168.1.203:1984/v1/logs';
+const api_url = 'http://192.168.1.203:1984/';
+const log_path = 'v1/logs';
+const user_path = 'v1/users';
 
 function App() {
   const [log_entry, setLogEntry] = useState([]);
@@ -9,9 +12,10 @@ function App() {
   const [editId, setEditId] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [nameOptions, setNameOptions] = useState([]);;
 
   const fetchLogs = async (pg = 1) => {
-    const response = await axios.get(api_url + `?page=${pg}&limit=5`);
+    const response = await axios.get(api_url + log_path + `?page=${pg}&limit=5`);
     setLogEntry(response.data.logs);
     setTotalPages(response.data.totalPages);
     setPage(response.data.page);
@@ -21,14 +25,16 @@ function App() {
     e.preventDefault();
     if (editId) {
       console.log('Updating entry with ID at URL:', editId, api_url);
-      await axios.put(`${api_url}/${editId}`, form);
+      await axios.put(`${api_url}${log_path}/${editId}`, form);
       setEditId(null);
     } else {
       console.log('Creating new entry at URL:', api_url);
-      await axios.post(api_url, form);
+      await axios.post(api_url+log_path, form);
     }
-    setForm({ name: '', description: '', date: '', location: '' });
+    setForm({ name: form.name, description: '', date: '', location: '' });
     fetchLogs();
+    localStorage.setItem('lastUsedName', form.name);
+    fetchNames();
   };
 
   const handleEditEntry = (entry) => {
@@ -42,14 +48,38 @@ function App() {
     fetchLogs();
   };
 
+  const fetchNames = async () => {
+    const response = await axios.get(api_url + user_path);
+    const options = response.data.map(user => ({label: user.username, value: user.username}));
+    setNameOptions(options);
+    console.log('Fetched names:', options);
+
+    const lastUsedName = localStorage.getItem('lastUsedName');
+    if (lastUsedName) {
+      setForm(prev => ({ ...prev, name: lastUsedName }));
+    }
+
+  }
+
   useEffect(() => {
     fetchLogs();
+    fetchNames();
   }, []);
   return (
     <div>
       <h1>Log Entry Manager</h1>
       <form onSubmit={handleCreateEntry}>
-        <input type="text" placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+        <CreatableSelect
+          isClearable
+          onChange={(selected) =>
+            setForm({ ...form, name: selected ? selected.value : '' })
+          }
+          onCreateOption={(inputValue) =>
+            setForm({ ...form, name: inputValue })
+          }
+          value={form.name ? { value: form.name, label: form.name } : null}
+          options={nameOptions}
+        />
         <input type="text" placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required />
         <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
         <input type="text" placeholder="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} required />
